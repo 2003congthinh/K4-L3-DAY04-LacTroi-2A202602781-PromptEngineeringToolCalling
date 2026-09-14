@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import importlib
+import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -17,6 +19,7 @@ from providers.base import ModelResponse, ToolCall
 from run_eval import evaluate_phase_b, load_cases, validate_expected_tools
 from tools import TOOL_FUNCTIONS, load_tool_declarations
 ticket_module = importlib.import_module("tools.create_ticket.tool")
+external_search_module = importlib.import_module("tools.search_device_info.tool")
 
 
 BASE_PATH = ROOT / "data" / "eval_base.json"
@@ -42,6 +45,19 @@ class SequenceProvider:
         return self.responses.pop(0)
 
 
+class FakeHTTPResponse:
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> dict:
+        return {"results": [{
+            "title": "Official support page",
+            "url": "https://support.lenovo.com/example",
+            "content": "Official driver and support information.",
+            "score": 0.99,
+        }]}
+
+
 class LabStructureTests(unittest.TestCase):
     def test_json_and_yaml_load(self) -> None:
         for path in (BASE_PATH, EXTENSION_PATH, GROUP_PATH):
@@ -55,9 +71,9 @@ class LabStructureTests(unittest.TestCase):
         self.assertEqual(len(base), 20)
         self.assertEqual(sum("query" in case for case in base), 14)
         self.assertEqual(sum("turns" in case for case in base), 6)
-        self.assertEqual(len(extension), 8)
+        self.assertEqual(len(extension), 10)
         self.assertEqual(group, [])
-        self.assertEqual(len({case["id"] for case in base + extension}), 28)
+        self.assertEqual(len({case["id"] for case in base + extension}), 30)
 
     def test_every_expected_tool_is_declared_and_implemented(self) -> None:
         declarations = load_tool_declarations(TOOLS_PATH)
@@ -99,7 +115,13 @@ class LabStructureTests(unittest.TestCase):
                     elif call["name"] == "create_ticket":
                         args.setdefault("summary", "Synthetic validation ticket")
                         args["confirmed"] = False
-                    output = TOOL_FUNCTIONS[call["name"]](**args)
+                    if call["name"] == "search_device_info":
+                        with mock.patch.dict(os.environ, {"TAVILY_API_KEY": "test-key"}), mock.patch.object(
+                            external_search_module.requests, "post", return_value=FakeHTTPResponse()
+                        ):
+                            output = TOOL_FUNCTIONS[call["name"]](**args)
+                    else:
+                        output = TOOL_FUNCTIONS[call["name"]](**args)
                     self.assertIsInstance(output, dict, case["id"])
                     self.assertNotIn("error", output, case["id"])
 
@@ -121,6 +143,32 @@ class ToolContractTests(unittest.TestCase):
         self.assertEqual(TOOL_FUNCTIONS["inspect_device"]("LT-999")["error"], "asset_not_found")
         self.assertEqual(TOOL_FUNCTIONS["lookup_user"]("EMP-9999")["error"], "employee_not_found")
         self.assertEqual(TOOL_FUNCTIONS["check_service_status"]("erp")["error"], "not_found")
+
+    def test_external_device_search_uses_public_product_data_only(self) -> None:
+        with mock.patch.dict(os.environ, {"TAVILY_API_KEY": "test-key"}), mock.patch.object(
+            external_search_module.requests, "post", return_value=FakeHTTPResponse()
+        ) as post:
+            result = TOOL_FUNCTIONS["search_device_info"]("Lenovo", "ThinkPad T14 Gen 4", "drivers", 9)
+        self.assertEqual(result["items"][0]["source"], "support.lenovo.com")
+        request_body = post.call_args.kwargs["json"]
+        self.assertEqual(request_body["max_results"], 5)
+        self.assertEqual(request_body["include_domains"], ["support.lenovo.com", "psref.lenovo.com"])
+        serialized = json.dumps(request_body).lower()
+        self.assertNotIn("lt-204", serialized)
+        self.assertNotIn("emp-", serialized)
+
+    def test_external_device_search_requires_key(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=True):
+            result = TOOL_FUNCTIONS["search_device_info"]("Lenovo", "ThinkPad T14 Gen 4", "specs")
+        self.assertEqual(result["error"], "missing_api_key")
+
+    def test_external_device_search_rejects_internal_identifier(self) -> None:
+        with mock.patch.dict(os.environ, {"TAVILY_API_KEY": "test-key"}), mock.patch.object(
+            external_search_module.requests, "post"
+        ) as post:
+            result = TOOL_FUNCTIONS["search_device_info"]("Lenovo", "ThinkPad T14 Gen 4 LT-204", "specs")
+        self.assertEqual(result["error"], "restricted_internal_identifier")
+        post.assert_not_called()
 
     def test_ticket_requires_confirmation_and_writes_only_after_confirmation(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

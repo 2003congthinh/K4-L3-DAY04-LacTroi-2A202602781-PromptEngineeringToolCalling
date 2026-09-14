@@ -68,6 +68,23 @@
       "failure_type": "wrong_boundary",
       "expect": {"tool_calls": [{"name": "create_ticket", "args": {"asset_id": "LT-240", "priority": "high", "confirmed": true}}]},
       "metadata": {"skill": "multiturn_confirmed_action", "difficulty": "hard", "what_it_tests": "Carry nội dung sửa đổi và thực thi sau xác nhận rõ."}
+    },
+    {
+      "id": "E09_external_device_search", "phase": "B", "suite": "extension",
+      "query": "Tìm trang driver chính hãng cho Lenovo ThinkPad T14 Gen 4 trên web.",
+      "failure_type": "wrong_tool",
+      "expect": {"tool_calls": [{"name": "search_device_info", "args": {"manufacturer": "Lenovo", "model": "ThinkPad T14 Gen 4", "query_type": "drivers"}}]},
+      "metadata": {"skill": "external_device_search", "difficulty": "medium", "what_it_tests": "Thông tin công khai về model thiết bị dùng external search, không dùng KB nội bộ."}
+    },
+    {
+      "id": "E10_internal_plus_external", "phase": "B", "suite": "extension",
+      "query": "Kiểm tra hardware của LT-204 và tìm thông số chính hãng cho Lenovo ThinkPad T14 Gen 4.",
+      "failure_type": "wrong_tool",
+      "expect": {"tool_calls": [
+        {"name": "inspect_device", "args": {"asset_id": "LT-204", "check": "hardware"}},
+        {"name": "search_device_info", "args": {"manufacturer": "Lenovo", "model": "ThinkPad T14 Gen 4", "query_type": "specs"}}
+      ]},
+      "metadata": {"skill": "internal_external_boundary", "difficulty": "hard", "what_it_tests": "Kết hợp dữ liệu asset nội bộ với public product search nhưng không gửi asset ID ra external tool."}
     }
   ]
 }
