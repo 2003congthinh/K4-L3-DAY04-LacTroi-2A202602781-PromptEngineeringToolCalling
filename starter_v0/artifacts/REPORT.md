@@ -98,9 +98,73 @@ nhóm tự xây.
 - Ticket chỉ được tạo sau xác nhận rõ chưa?
 - Tool result error nào cần review thủ công?
 
-## B7. Reflection
+## B7. Technical reflection
 
 - Fix nào thuộc `system_prompt.md`?
 - Fix nào thuộc `tools.yaml`?
 - Failure nào không thể chỉ nhìn automatic score?
 - Nếu có thêm một vòng, nhóm sẽ thử hypothesis nào?
+
+# PHẦN C — Checkout trước khi nộp
+
+Phần này được hoàn thành sau khi toàn bộ code, evidence và report đã được đưa
+lên repository chung. Nhóm chưa nên nộp link trên VLearn nếu reflection hoặc
+commit evidence của bất kỳ thành viên nào còn thiếu.
+
+## C1. Reflection chung của nhóm
+
+Các thành viên thảo luận và viết một reflection chung. Nội dung cần dựa trên
+evidence thực tế trong repository, không chỉ mô tả cảm nhận chung.
+
+- Mục tiêu nào của nhóm đã hoàn thành? Dẫn đến artifact hoặc run tương ứng.
+- Hypothesis hoặc thay đổi nào tạo ra cải thiện rõ nhất?
+- Failure quan trọng nào vẫn chưa xử lý được hoàn toàn?
+- Nhóm đã phân chia, review và tích hợp công việc như thế nào?
+- Nếu có thêm một vòng, nhóm sẽ ưu tiên thay đổi và kiểm chứng điều gì?
+
+**Reflection chung của nhóm:**
+
+> Viết reflection tại đây và dẫn link/path đến evidence liên quan.
+
+## C2. Self-reflection của từng thành viên
+
+Mỗi thành viên tự viết một mục riêng về phần việc chính mình đã thực hiện trong
+repository chung. Không viết thay hoặc gộp nhiều thành viên vào một câu trả lời.
+Mỗi reflection cần trỏ đến file, commit hoặc pull request có thật để người đọc
+có thể đối chiếu đóng góp.
+
+Sao chép mẫu dưới đây cho từng thành viên:
+
+### Họ tên — MSSV
+
+- **Vai trò/phần việc được nhận:**
+- **Những gì tôi đã thay đổi trong repo chung:**
+- **File hoặc artifact liên quan:**
+- **Commit hash hoặc pull request:**
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:**
+- **Khó khăn tôi gặp và cách tôi xử lý:**
+- **Điều tôi học được từ phần việc này:**
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:**
+
+Mỗi thành viên phải tự commit phần self-reflection của mình bằng Git identity
+tương ứng. Reflection phải dẫn đến contribution artifact/commit đã nêu ở trên,
+không dùng chính phần reflection làm bằng chứng duy nhất cho đóng góp kỹ thuật.
+
+## C3. Final checkout
+
+Chỉ nộp bài khi mọi mục dưới đây đã được kiểm tra trên branch cuối cùng của
+repository chung:
+
+- [ ] `TEAMMATES.md` có đủ họ tên, MSSV, GitHub username và vai trò.
+- [ ] Mỗi thành viên có ít nhất một commit trong lịch sử branch nộp bài.
+- [ ] Phần reflection chung của nhóm đã hoàn thành và có evidence.
+- [ ] Mỗi thành viên đã tự viết và commit self-reflection của mình.
+- [ ] `system_prompt.md`, `tools.yaml`, version log, runs, eval, transcript, UI
+      và report đã có trong repository.
+- [ ] Không có `.env`, API key, token, dữ liệu thật, cache hoặc generated ticket.
+- [ ] Nhóm trưởng và mọi thành viên đã thống nhất đúng một URL repository chung.
+- [ ] Nhóm trưởng và mọi thành viên sẽ nộp cùng URL đó trên VLearn.
+
+**URL repository chung dùng để nộp:**
+
+> URL:
