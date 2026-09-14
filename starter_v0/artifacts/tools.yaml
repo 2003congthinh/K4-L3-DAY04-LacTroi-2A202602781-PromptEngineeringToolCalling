@@ -23,7 +23,7 @@ tools:
       type: object
       properties:
         query: {type: string, default: "", description: "Nội dung cần tìm"}
-        category: {type: string, enum: [all, vpn, email, wifi, printing, account], default: "all", description: "Nhóm hướng dẫn"}
+        category: {type: string, enum: [all, vpn, email, wifi, printing, account, security, hardware, software, meeting_room], default: "all", description: "Nhóm hướng dẫn"}
         top_k: {type: integer, default: 3, description: "Số kết quả"}
       required: [query]
 
@@ -91,7 +91,7 @@ tools:
       type: object
       properties:
         query: {type: string, default: "", description: "Nội dung cần tìm"}
-        policy_area: {type: string, enum: [all, access_control, data_privacy, incident_response, service_operations, ticketing], default: "all", description: "Nhóm chính sách"}
+        policy_area: {type: string, enum: [all, access_control, data_privacy, external_tools, incident_response, service_operations, ticketing], default: "all", description: "Nhóm chính sách"}
         top_k: {type: integer, default: 3, description: "Số mục"}
       required: [query]
 
