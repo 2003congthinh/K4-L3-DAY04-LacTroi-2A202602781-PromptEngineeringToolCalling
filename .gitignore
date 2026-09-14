@@ -14,6 +14,7 @@ __pycache__/
 INTERNAL-DEMO-SCRIPT.md
 INSTRUCTOR-GUIDE.md
 starter/
+starter_v0/tests/
 
 # Local action/scratch output
 /starter_v0/tickets/
