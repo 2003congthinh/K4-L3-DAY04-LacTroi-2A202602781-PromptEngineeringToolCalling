@@ -26,6 +26,7 @@ requires_confirmation: true
 ---
 ```
 
-Chỉ action tool mới dùng `requires_confirmation`. Tool mới của nhóm phải dùng dữ
-liệu giả lập, output JSON ổn định, có lỗi rõ ràng cho input không tồn tại và có
-smoke test. Không thêm dữ liệu thật, credential hoặc thông tin cá nhân.
+Chỉ action tool mới dùng `requires_confirmation`. Nếu nhóm chọn làm bonus tool,
+tool đó phải dùng dữ liệu giả lập, output JSON ổn định, có lỗi rõ ràng cho input
+không tồn tại và có smoke test. Không thêm dữ liệu thật, credential hoặc thông
+tin cá nhân.
