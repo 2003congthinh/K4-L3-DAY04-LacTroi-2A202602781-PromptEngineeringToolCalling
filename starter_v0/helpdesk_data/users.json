@@ -1,0 +1,9 @@
+{
+  "snapshot_at": "2026-09-14T09:00:00+07:00",
+  "users": [
+    {"employee_id": "EMP-1001", "display_name": "An Nguyen", "department": "Finance", "office": "Bangkok", "account_status": "active", "mfa_status": "enrolled", "assigned_assets": ["LT-204"]},
+    {"employee_id": "EMP-1002", "display_name": "Binh Tran", "department": "Sales", "office": "Bangkok", "account_status": "active", "mfa_status": "enrolled", "assigned_assets": ["LT-240"]},
+    {"employee_id": "EMP-1003", "display_name": "Chi Le", "department": "Operations", "office": "Bangkok", "account_status": "locked", "mfa_status": "enrolled", "assigned_assets": ["DT-031"]},
+    {"employee_id": "EMP-1004", "display_name": "Dung Pham", "department": "Engineering", "office": "Remote", "account_status": "active", "mfa_status": "not_enrolled", "assigned_assets": []}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "snapshot_at": "2026-09-14T09:00:00+07:00",
+  "services": [
+    {"service": "vpn", "environment": "production", "status": "degraded", "incident": "Intermittent authentication failures for some Windows clients", "incident_id": "INC-1042"},
+    {"service": "vpn", "environment": "staging", "status": "operational", "incident": null, "incident_id": null},
+    {"service": "email", "environment": "production", "status": "operational", "incident": null, "incident_id": null},
+    {"service": "email", "environment": "staging", "status": "maintenance", "incident": "Planned connector upgrade", "incident_id": "CHG-221"},
+    {"service": "sso", "environment": "production", "status": "operational", "incident": null, "incident_id": null},
+    {"service": "sso", "environment": "staging", "status": "operational", "incident": null, "incident_id": null},
+    {"service": "wifi", "environment": "production", "status": "partial_outage", "incident": "Access points on floor 4 are unavailable", "incident_id": "INC-1045"},
+    {"service": "wifi", "environment": "staging", "status": "operational", "incident": null, "incident_id": null},
+    {"service": "printing", "environment": "production", "status": "operational", "incident": null, "incident_id": null},
+    {"service": "printing", "environment": "staging", "status": "operational", "incident": null, "incident_id": null}
+  ]
+}
