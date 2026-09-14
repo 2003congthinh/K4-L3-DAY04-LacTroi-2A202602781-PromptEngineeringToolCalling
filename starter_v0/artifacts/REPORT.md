@@ -71,13 +71,14 @@ Liệt kê đúng 10 case tự viết: 5 single-turn và 5 multi-turn.
 
 ## B5. Tool capability evidence
 
-Không ghi UI vào bảng bonus. `policy` và `create_ticket` có sẵn là optional,
-không phải tool mới của nhóm.
+Không ghi UI vào bảng bonus. `policy`, `create_ticket` và
+`search_device_info` có sẵn là optional, không phải tool mới của nhóm.
 
 | Category | Evidence file | What worked | Risk / guardrail |
 |---|---|---|---|
 | Must-have: tool mới đầu tiên |  |  |  |
 | Optional built-in |  |  |  |
+| External search + privacy boundary |  |  |  |
 | Bonus: tool mới thứ 4 trở đi |  |  |  |
 
 ## B6. Safety review

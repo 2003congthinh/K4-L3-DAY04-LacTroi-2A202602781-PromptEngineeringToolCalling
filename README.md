@@ -49,9 +49,9 @@ liệu đưa vào demo và transcript phải là dữ liệu giả lập.
 - Có UI chạy được; khuyến nghị Streamlit nhưng không bắt buộc framework.
 - Hoàn thành `artifacts/REPORT.md`: Phần A trước demo, Phần B khi nộp.
 
-UI là deliverable core. Tool `policy` và `create_ticket` là optional/advanced,
-không được tính là tool mới của nhóm. Bonus chỉ áp dụng khi nhóm hoàn thành UI và
-tự xây thêm hơn 3 tool mới.
+UI là deliverable core. Các tool `policy`, `create_ticket` và
+`search_device_info` là optional/advanced, không được tính là tool mới của nhóm.
+Bonus chỉ áp dụng khi nhóm hoàn thành UI và tự xây thêm hơn 3 tool mới.
 
 ## Tool có sẵn
 
@@ -68,6 +68,15 @@ Optional/advanced:
 
 - `policy`: tìm trong IT policy markdown nội bộ giả lập.
 - `create_ticket`: tạo ticket local sau khi đã có xác nhận rõ.
+- `search_device_info`: gọi Tavily để tìm specs, driver hoặc support page công
+  khai theo hãng/model.
+
+Luồng external search gợi ý:
+
+1. `inspect_device(asset_id)` lấy manufacturer/model từ inventory nội bộ.
+2. Chỉ chuyển manufacturer/model công khai sang `search_device_info`.
+3. Không gửi asset ID, employee ID, serial, hostname hay diagnostic log ra ngoài.
+4. Trả kết quả kèm URL và phân biệt rõ dữ liệu nội bộ với nguồn web.
 
 Starter cố tình có system prompt và tool descriptions chưa tốt. Không sửa code
 implementation chỉ để ép model pass fixed eval; hãy cải thiện interface giữa
@@ -81,7 +90,7 @@ model và tool.
 | `starter_v0/artifacts/tools.yaml` | Tool name, description và JSON schema |
 | `starter_v0/data/eval_base.json` | Fixed eval, không được sửa nội dung kỳ vọng |
 | `starter_v0/data/eval_group.json` | 10 case do nhóm tự thiết kế |
-| `starter_v0/data/eval_helpdesk_extension.json` | Optional policy/ticket eval |
+| `starter_v0/data/eval_helpdesk_extension.json` | Optional policy/ticket/external-search eval |
 | `starter_v0/helpdesk_data/` | Dữ liệu helpdesk giả lập local |
 | `starter_v0/company_policy/` | Policy IT giả lập local |
 | `starter_v0/tools/<tool_name>/` | Implementation và `TOOL.md` |
@@ -106,7 +115,8 @@ python scripts/validate_lab.py
 python scripts/preflight_provider.py --provider openrouter
 ```
 
-Chỉ model provider cần API key. Các helpdesk tools có sẵn dùng local mock data.
+Core chỉ cần model provider key. Optional external device search cần thêm
+`TAVILY_API_KEY`; các helpdesk tool còn lại dùng local mock data.
 
 ## Step 1 — Baseline v0
 
@@ -193,8 +203,9 @@ Advanced track:
 python run_eval.py --provider openrouter --version v3 --suite extension --eval-cases data/eval_helpdesk_extension.json
 ```
 
-Extension có case tạo ticket local. Chỉ chạy khi nhóm hiểu confirmation boundary;
-ticket được ghi vào `starter_v0/tickets/` và không cần nộp.
+Extension có case tạo ticket local và search thiết bị qua Tavily. Chỉ chạy khi
+nhóm hiểu confirmation/privacy boundary và đã cấu hình key cần thiết. Ticket
+được ghi vào `starter_v0/tickets/` và không cần nộp.
 
 ## Step 5 — UI và live chat
 
