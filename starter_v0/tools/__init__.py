@@ -13,6 +13,7 @@ from .inspect_device.tool import inspect_device
 from .lookup_user.tool import lookup_user
 from .policy.tool import search_company_policy
 from .search_kb.tool import search_kb
+from .search_device_info.tool import search_device_info
 
 
 # NOTE (starter_v0): these keys are the names the model sees AND the names
@@ -23,6 +24,7 @@ from .search_kb.tool import search_kb
 TOOL_FUNCTIONS = {
     "clarify": ask_user,
     "search_kb": search_kb,
+    "search_device_info": search_device_info,
     "check_service_status": check_service_status,
     "inspect_device": inspect_device,
     "lookup_user": lookup_user,

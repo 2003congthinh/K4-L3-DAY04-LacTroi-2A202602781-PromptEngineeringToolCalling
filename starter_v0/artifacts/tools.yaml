@@ -74,6 +74,17 @@ tools:
       required: [findings, template]
 
   # ---------------- Optional/advanced tools ----------------
+  - name: search_device_info
+    description: "Tìm thông tin công khai về một model thiết bị trên web. Chỉ truyền hãng, model và loại thông tin; không truyền asset ID, employee ID hoặc dữ liệu nội bộ."
+    parameters:
+      type: object
+      properties:
+        manufacturer: {type: string, description: "Hãng sản xuất công khai, ví dụ Lenovo"}
+        model: {type: string, description: "Tên model công khai, ví dụ ThinkPad T14 Gen 4"}
+        query_type: {type: string, enum: [specs, drivers, support, compatibility], default: "support", description: "Loại thông tin cần tìm"}
+        max_results: {type: integer, default: 3, description: "Số kết quả, tối đa 5"}
+      required: [manufacturer, model, query_type]
+
   - name: policy
     description: "Tìm trong chính sách IT nội bộ."
     parameters:

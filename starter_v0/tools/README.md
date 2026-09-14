@@ -16,7 +16,7 @@ Frontmatter tối thiểu của `TOOL.md`:
 ---
 name: tool_name
 track: core | bonus
-kind: local_knowledge | local_status | local_inventory | local_formatter | action | control
+kind: live_api | local_knowledge | local_status | local_inventory | local_formatter | action | control
 provider: optional_provider_name
 requires_env: []
 inputs: [arg_name]

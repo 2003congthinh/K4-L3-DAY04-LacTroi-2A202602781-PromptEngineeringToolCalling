@@ -3,6 +3,7 @@
   "assets": [
     {
       "asset_id": "LT-204",
+      "manufacturer": "Lenovo",
       "type": "laptop",
       "model": "ThinkPad T14 Gen 4",
       "os": "Windows 11 23H2",
@@ -18,6 +19,7 @@
     },
     {
       "asset_id": "LT-240",
+      "manufacturer": "Dell",
       "type": "laptop",
       "model": "Dell Latitude 7440",
       "os": "Windows 11 23H2",
@@ -33,6 +35,7 @@
     },
     {
       "asset_id": "DT-031",
+      "manufacturer": "HP",
       "type": "desktop",
       "model": "HP EliteDesk 800 G9",
       "os": "Windows 11 23H2",
