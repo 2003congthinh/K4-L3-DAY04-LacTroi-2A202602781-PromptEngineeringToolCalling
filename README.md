@@ -174,5 +174,6 @@ Việc chỉ đổi tên tool cũ hoặc thêm folder rỗng không được tí
 
 Xem [TOOL-SETUP.md](TOOL-SETUP.md) để cài môi trường và kiểm tra từng tool.
 Xem [LAB-GUIDE.md](LAB-GUIDE.md) để tham khảo một quy trình làm bài gợi ý.
+Xem [SUBMISSION-GUIDE.md](SUBMISSION-GUIDE.md) để xem hướng dẫn cách nộp bài lab
 
 Không nộp `.env`, API key, `.venv`, cache, generated tickets hoặc dữ liệu thật.
