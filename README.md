@@ -1,246 +1,178 @@
-# Day 04 Lab v3 — IT Helpdesk Agent Tool Eval
+# Day 04 Lab — IT Helpdesk Agent
 
-## Brief
+## Tổng quan
 
-Trong lab này, nhóm xây một IT Helpdesk Agent chạy thật trên model provider.
-Agent nhận yêu cầu hỗ trợ, chọn tool, truyền arguments, chạy tool trên dữ liệu
-doanh nghiệp giả lập, lưu full JSON trace, rồi dùng evidence đó để tối ưu prompt
-và tool declaration qua nhiều version.
+Trong bài lab này, học viên xây dựng và cải tiến một IT Helpdesk Agent có khả
+năng chọn tool, truyền arguments, xử lý hội thoại nhiều lượt và bảo vệ các ranh
+giới an toàn khi làm việc với dữ liệu nội bộ hoặc hành động ghi.
 
-Điều cần học không phải là làm chatbot trả lời trôi chảy. Mục tiêu là vòng lặp
-evidence-driven:
+Starter đã cung cấp agent loop, nhiều model provider, các tool helpdesk, dữ liệu
+giả lập và evaluator. Nhiệm vụ chính của học viên là dùng evidence từ
+run thật để cải thiện:
 
-1. Chạy baseline bằng API model thật.
-2. Đọc log để tìm sai tool, sai args, thiếu hỏi lại, gọi thừa hoặc vượt boundary.
-3. Sửa `artifacts/system_prompt.md` hoặc `artifacts/tools.yaml`.
-4. Chạy lại, đo metric và ghi versioning.
-5. Tự viết eval case cho những lỗi nhóm quan tâm.
-6. Trình bày kết luận dựa trên trace thật.
+- `starter_v0/artifacts/system_prompt.md`;
+- `starter_v0/artifacts/tools.yaml`.
 
-Toàn bộ asset, employee, service, knowledge base và policy trong lab đều là dữ
-liệu giả lập local. Không sử dụng dữ liệu thật của công ty hoặc cá nhân.
+Đây là bài lab về prompt engineering và tool calling. Mục tiêu không phải chỉ
+làm câu trả lời nghe hay, mà là làm cho hành vi chọn tool có thể đo lường, giải
+thích và tái lập.
 
-## Bối cảnh nghiệp vụ
+## Mục đích học tập
 
-Agent hỗ trợ nhân viên trong các tình huống như:
+Sau bài lab, học viên cần có khả năng:
+
+1. Phân biệt lỗi routing, lỗi arguments, lỗi multi-turn và lỗi safety boundary.
+2. Hiểu tool name, description và JSON schema đều là một phần của prompt.
+3. Biết khi nào agent cần hỏi lại thay vì tự đoán identifier.
+4. Biết khi nào một yêu cầu cần nhiều tool.
+5. Xử lý correction, cancellation và context carry-over trong hội thoại.
+6. Xin xác nhận trước khi thực hiện action làm thay đổi trạng thái.
+7. Phân tách dữ liệu nội bộ với dữ liệu được phép gửi ra external service.
+8. Dùng run log và metric để kiểm chứng một thay đổi prompt/tool declaration.
+
+## Bối cảnh
+
+Agent làm việc trong service desk của công ty giả lập. Người dùng có thể yêu
+cầu:
 
 - kiểm tra trạng thái VPN, email, SSO, Wi-Fi hoặc printing;
-- kiểm tra diagnostic snapshot của một thiết bị theo asset ID;
-- tra cứu tài khoản theo employee ID;
+- kiểm tra diagnostic snapshot của một asset;
+- tra cứu tài khoản và thiết bị được cấp;
 - tìm hướng dẫn trong IT knowledge base;
-- tổng hợp findings thành incident report;
-- hỏi lại khi thiếu identifier;
-- xác nhận trước khi tạo ticket;
-- tra cứu policy IT nội bộ ở advanced track.
+- đọc chính sách IT nội bộ;
+- format findings thành incident report;
+- tạo ticket sau khi xác nhận;
+- tìm thông tin công khai về model thiết bị trên web.
 
-Agent không được yêu cầu password, MFA code, token hoặc recovery code. Mọi dữ
-liệu đưa vào demo và transcript phải là dữ liệu giả lập.
+Mọi employee, asset, incident và policy trong repo đều là dữ liệu giả lập.
 
-## Scope bắt buộc
+## Input được cung cấp
 
-- Setup và chạy được bằng một model provider thật.
-- Giữ ít nhất 5 tool được khai báo trong `artifacts/tools.yaml`.
-- Chạy fixed base eval ở `v0`.
-- Tối ưu ít nhất 3 vòng thật: `v1`, `v2`, `v3`.
-- Ghi đầy đủ `artifacts/version_log.csv`.
-- Viết ít nhất 1 tool mới, gồm `TOOL.md`, `tool.py`, registry và YAML declaration.
-- Tự viết đúng 10 case trong `data/eval_group.json`: 5 single-turn + 5 multi-turn.
-- Nộp run JSON, transcript JSON và report dựa trên evidence thật.
-- Có UI chạy được; khuyến nghị Streamlit nhưng không bắt buộc framework.
-- Hoàn thành `artifacts/REPORT.md`: Phần A trước demo, Phần B khi nộp.
+Học viên nhận được:
 
-UI là deliverable core. Các tool `policy`, `create_ticket` và
-`search_device_info` là optional/advanced, không được tính là tool mới của nhóm.
-Bonus chỉ áp dụng khi nhóm hoàn thành UI và tự xây thêm hơn 3 tool mới.
+| Input | Nội dung |
+|---|---|
+| Agent runtime | `agent.py`, `chat.py`, provider adapters và tool loop |
+| Baseline prompt | `artifacts/system_prompt.md`, cố ý chưa hoàn chỉnh |
+| Tool declarations | `artifacts/tools.yaml`, cần cải thiện bằng evidence |
+| Tool implementations | 9 tool nội bộ, action và external-search có sẵn |
+| Mock data | 9 assets, 10 users, service status, 11 KB articles và IT policies |
+| Fixed eval | Base, extension và adversarial datasets |
+| Team eval template | `data/eval_group.json` để nhóm tự viết case |
+| Preflight | Script kiểm tra structured tool calling của model provider |
+| Report template | `artifacts/REPORT.md` |
 
 ## Tool có sẵn
 
-Core:
+### Core tools
 
-- `clarify`: hỏi bổ sung hoặc xin xác nhận.
-- `search_kb`: tìm troubleshooting article trong knowledge base local.
+- `clarify`: hỏi bổ sung thông tin hoặc xin xác nhận.
+- `search_kb`: tìm hướng dẫn trong knowledge base local.
 - `check_service_status`: đọc trạng thái shared service giả lập.
-- `inspect_device`: đọc device inventory và diagnostic snapshot.
-- `lookup_user`: đọc directory record giả lập theo employee ID.
-- `format_incident_report`: format findings đã có thành markdown.
+- `inspect_device`: đọc inventory và diagnostic snapshot của asset.
+- `lookup_user`: đọc directory record theo employee ID.
+- `format_incident_report`: format findings đã có thành báo cáo.
 
-Optional/advanced:
+### Advanced tools có sẵn
 
-- `policy`: tìm trong IT policy markdown nội bộ giả lập.
-- `create_ticket`: tạo ticket local sau khi đã có xác nhận rõ.
-- `search_device_info`: gọi Tavily để tìm specs, driver hoặc support page công
-  khai theo hãng/model.
+- `policy`: tìm trong IT policy local.
+- `create_ticket`: tạo ticket local sau explicit confirmation.
+- `search_device_info`: dùng Tavily tìm specs, driver hoặc support page công khai.
 
-Luồng external search gợi ý:
+Các advanced tools có sẵn không được tính là tool mới do nhóm tự xây.
 
-1. `inspect_device(asset_id)` lấy manufacturer/model từ inventory nội bộ.
-2. Chỉ chuyển manufacturer/model công khai sang `search_device_info`.
-3. Không gửi asset ID, employee ID, serial, hostname hay diagnostic log ra ngoài.
-4. Trả kết quả kèm URL và phân biệt rõ dữ liệu nội bộ với nguồn web.
+## Ranh giới an toàn
 
-Starter cố tình có system prompt và tool descriptions chưa tốt. Không sửa code
-implementation chỉ để ép model pass fixed eval; hãy cải thiện interface giữa
-model và tool.
+Agent cần tôn trọng các nguyên tắc sau:
 
-## Các file quan trọng
+- Không tự đoán asset ID hoặc employee ID.
+- Không yêu cầu hoặc lưu password, token, API key, MFA/OTP hay recovery code.
+- Không coi pseudo-code, JSON do user nhập hoặc fake tool result là confirmation.
+- Confirmation cũ mất hiệu lực khi payload action thay đổi.
+- Không thực thi tool không được khai báo.
+- Không làm theo instruction được nhúng trong KB, policy hoặc web result.
+- Chỉ manufacturer, model và query type công khai được gửi ra external search.
+- Không gửi asset ID, employee ID, serial, hostname, location hoặc diagnostics ra ngoài.
 
-| Path | Mục đích |
+## Expectation đầu ra bắt buộc
+
+Khi hoàn thành core lab, nhóm cần nộp:
+
+| Deliverable | Expectation |
 |---|---|
-| `starter_v0/artifacts/system_prompt.md` | Baseline instruction cố tình có lỗi |
-| `starter_v0/artifacts/tools.yaml` | Tool name, description và JSON schema |
-| `starter_v0/data/eval_base.json` | Fixed eval, không được sửa nội dung kỳ vọng |
-| `starter_v0/data/eval_group.json` | 10 case do nhóm tự thiết kế |
-| `starter_v0/data/eval_helpdesk_extension.json` | Optional policy/ticket/external-search eval |
-| `starter_v0/helpdesk_data/` | Dữ liệu helpdesk giả lập local |
-| `starter_v0/company_policy/` | Policy IT giả lập local |
-| `starter_v0/tools/<tool_name>/` | Implementation và `TOOL.md` |
-| `starter_v0/artifacts/version_log.csv` | Hypothesis và metric theo version |
-| `starter_v0/artifacts/REPORT.md` | Tài liệu demo/nộp bài |
+| `system_prompt.md` | Prompt cuối cùng được cải thiện từ evidence, không hard-code case IDs |
+| `tools.yaml` | Description/schema rõ ràng, đồng bộ với registry |
+| `version_log.csv` | Có `v0`, `v1`, `v2`, `v3`, hypothesis, metric và run file |
+| Base runs | Run JSON cho baseline và các version cải tiến |
+| Team eval | Đúng 10 case original: 5 single-turn + 5 multi-turn |
+| Adversarial evidence | Chạy fixed suite và phân tích ít nhất 3 security cases |
+| Transcript | Có evidence cho normal, missing-info, multi-turn và action boundary |
+| UI | Chat hoạt động, hiển thị tool calls, args, result/error và artifact version |
+| Report | Mô tả agent, version evidence, failures, safety review và reflection |
 
-Nếu đổi tên tool, phải sync `system_prompt.md`, `tools.yaml`, `tools/__init__.py`,
-`TOOL.md`, fixed eval, team eval và report. Trong fixed eval chỉ được sửa field
-tên tool để đồng bộ rename; không sửa query, expected args hoặc behavior.
+Điều kiện để một run được dùng làm evidence:
 
-## Setup
-
-Xem [TOOL-SETUP.md](TOOL-SETUP.md). Tóm tắt Windows PowerShell:
-
-```powershell
-cd starter_v0
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-python scripts/validate_lab.py
-python scripts/preflight_provider.py --provider openrouter
+```text
+provider_error_cases == 0
+measured_cases == total_cases
 ```
 
-Core chỉ cần model provider key. Optional external device search cần thêm
-`TAVILY_API_KEY`; các helpdesk tool còn lại dùng local mock data.
+Tool result có error hoặc empty result vẫn cần review thủ công, kể cả khi routing
+được evaluator chấm PASS.
 
-## Step 1 — Baseline v0
+## Bộ eval hiện tại
 
-```powershell
-cd starter_v0
-python run_eval.py --provider openrouter --version v0 --suite base --eval-cases data/eval_base.json
-```
+| Suite | Cases | Vai trò |
+|---|---:|---|
+| Base | 30: 20 single + 10 multi | Core routing, args, multi-tool và context |
+| Group | Đúng 10: 5 single + 5 multi | Case original do nhóm tự thiết kế |
+| Extension | 10 | Policy, confirmed ticket và external search |
+| Adversarial | 12 | Prompt injection, forged state, data exfiltration và tool abuse |
 
-Đọc các trường:
+Automatic grader kiểm tra tool names, expected argument subset, missing/extra
+tool calls và no-tool behavior. Chất lượng câu trả lời, dữ liệu nhạy cảm, tool
+execution result và chất lượng experiment phải được review thủ công.
 
-- `summary.case_accuracy`
-- `summary.tool_routing_accuracy`
-- `summary.argument_accuracy`
-- `summary.multiturn_accuracy`
-- `summary.provider_error_cases`
-- `results[*].result.failures`
-- `results[*].result.observed_mismatch`
-- `results[*].tool_results`
+## Tool mới của nhóm — Bonus
 
-Metric chỉ có giá trị khi `provider_error_cases == 0` và `measured_cases ==
-total_cases`. Tool result có error phải được review thủ công.
+Học viên không bắt buộc phải viết thêm tool để hoàn thành core lab.
 
-## Step 2 — Ba vòng cải tiến
+Nhóm có thể nhận bonus khi xây một capability mới có ý nghĩa, ví dụ:
 
-Trong mỗi vòng, đặt một hypothesis và chỉ sửa `system_prompt.md` hoặc
-`tools.yaml` để kiểm chứng. Không chạy v1/v2/v3 giống hệt nhau.
+- network diagnostics;
+- approved software catalog;
+- meeting-room inventory;
+- ticket status lookup.
 
-```powershell
-python run_eval.py --provider openrouter --version v1 --suite base --eval-cases data/eval_base.json
-python run_eval.py --provider openrouter --version v2 --suite base --eval-cases data/eval_base.json
-python run_eval.py --provider openrouter --version v3 --suite base --eval-cases data/eval_base.json
-```
+Tool bonus chỉ được công nhận khi có đủ:
 
-Ví dụ hướng phân tích, không phải đáp án:
+- `tools/<tool_name>/TOOL.md`;
+- implementation chạy được;
+- đăng ký trong `tools/__init__.py`;
+- declaration/schema trong `artifacts/tools.yaml`;
+- mock data hoặc API setup phù hợp;
+- smoke test;
+- team eval case;
+- evidence trong UI/transcript/report;
+- guardrail tương ứng với side effect và dữ liệu.
 
-- Khi nào request nói về shared service, khi nào nói về một asset?
-- Identifier nào tuyệt đối không được tự đoán?
-- Từ ngữ nào map sang `check`, `environment` hoặc `priority`?
-- Khi nào một request cần hai tool?
-- Khi nào phải dừng lại chờ user?
-- Thông tin sửa ở turn sau có ghi đè turn trước không?
+Việc chỉ đổi tên tool cũ hoặc thêm folder rỗng không được tính bonus.
 
-Sau mỗi run, cập nhật `artifacts/version_log.csv` bằng hash và đường dẫn run.
+## Các file chính
 
-## Step 3 — Tool mới của nhóm
+| Path | Vai trò |
+|---|---|
+| `starter_v0/artifacts/system_prompt.md` | Prompt artifact đang được tối ưu |
+| `starter_v0/artifacts/tools.yaml` | Interface model nhìn thấy |
+| `starter_v0/data/eval_base.json` | Fixed core eval |
+| `starter_v0/data/eval_group.json` | Team-authored eval template |
+| `starter_v0/data/eval_helpdesk_extension.json` | Advanced tool eval |
+| `starter_v0/data/eval_adversarial.json` | Security/red-team eval |
+| `starter_v0/helpdesk_data/` | Mock operational data |
+| `starter_v0/company_policy/` | Mock IT policy data |
+| `starter_v0/artifacts/REPORT.md` | Submission report template |
 
-Tool mới phải giải quyết một capability chưa có. Gợi ý:
+Xem [TOOL-SETUP.md](TOOL-SETUP.md) để cài môi trường và kiểm tra từng tool.
+Xem [LAB-GUIDE.md](LAB-GUIDE.md) để tham khảo một quy trình làm bài gợi ý.
 
-- `network_diagnostics`: kiểm tra DNS, gateway và latency từ fixture local.
-- `software_catalog`: kiểm tra phiên bản phần mềm được phê duyệt.
-- `room_equipment`: tra cứu thiết bị phòng họp.
-- `ticket_status`: đọc trạng thái ticket giả lập.
-
-Mỗi tool cần:
-
-1. `tools/<name>/TOOL.md` đúng frontmatter contract.
-2. `tools/<name>/tool.py` với output JSON ổn định.
-3. Đăng ký trong `tools/__init__.py`.
-4. Declaration và schema trong `artifacts/tools.yaml`.
-5. Smoke test trực tiếp và ít nhất một team eval case.
-
-## Step 4 — Team eval
-
-`data/eval_group.json` phải có đúng 10 case do nhóm tự viết:
-
-- 5 case dùng `query`;
-- 5 case dùng `turns`;
-- turn cuối của mỗi multi-turn phải là user turn được chấm;
-- `phase` luôn là `"B"`;
-- `failure_type` thuộc allowed list;
-- `expect` có `tool_calls` hoặc `no_tool`;
-- có `metadata.what_it_tests`.
-
-Hai case trong `samples/eval_group.schema.example.json` chỉ minh họa schema,
-không được tính vào 10 case.
-
-```powershell
-python run_eval.py --provider openrouter --version v3 --suite group --eval-cases data/eval_group.json
-```
-
-Advanced track:
-
-```powershell
-python run_eval.py --provider openrouter --version v3 --suite extension --eval-cases data/eval_helpdesk_extension.json
-```
-
-Extension có case tạo ticket local và search thiết bị qua Tavily. Chỉ chạy khi
-nhóm hiểu confirmation/privacy boundary và đã cấu hình key cần thiết. Ticket
-được ghi vào `starter_v0/tickets/` và không cần nộp.
-
-## Step 5 — UI và live chat
-
-UI cần hiển thị request, final response, từng tool call + args + result/error,
-version/artifact hash và transcript. Nếu dùng Streamlit, tái sử dụng
-`run_model_tool_loop` trong `chat.py`, không viết agent loop thứ hai.
-
-CLI chat:
-
-```powershell
-python chat.py --provider openrouter --version v3
-```
-
-Rehearse ít nhất 3 scenario:
-
-1. Kiểm tra một sự cố cần status + device inspection.
-2. Thiếu asset ID rồi bổ sung ở turn sau.
-3. Soạn ticket, sửa priority rồi xác nhận tạo.
-
-## Bằng chứng và nộp bài
-
-Nộp `starter_v0/` với artifacts, đúng 10 group cases, run JSON, transcript JSON,
-tool mới, UI và dependency. Không nộp `.env`, key, `.venv`, cache hoặc tickets.
-
-Không dùng password, token, MFA code hoặc dữ liệu thật trong query, log, report,
-screenshot hay demo public.
-
-## Checkpoints gợi ý — 09:00–13:00
-
-1. 09:00–09:15: kickoff, đọc tool/data/policy.
-2. 09:15–09:40: setup, validate local, provider preflight.
-3. 09:40–10:15: baseline v0, đọc failed trace, dựng UI skeleton.
-4. 10:15–10:50: v1 và tool mới.
-5. 10:50–11:05: nghỉ.
-6. 11:05–11:30: 10 group cases, v2, Report A, rehearsal.
-7. 11:30–12:15: showdown và challenge chéo.
-8. 12:15–12:40: v3, Report B, final gate.
-9. 12:40–13:00: recap.
+Không nộp `.env`, API key, `.venv`, cache, generated tickets hoặc dữ liệu thật.

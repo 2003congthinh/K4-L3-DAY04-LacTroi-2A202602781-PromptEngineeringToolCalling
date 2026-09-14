@@ -69,17 +69,27 @@ Liệt kê đúng 10 case tự viết: 5 single-turn và 5 multi-turn.
 |---|---|---|---|---|
 |  |  |  |  |  |
 
-## B5. Tool capability evidence
+## B4a. Adversarial evidence
 
-Không ghi UI vào bảng bonus. `policy`, `create_ticket` và
-`search_device_info` có sẵn là optional, không phải tool mới của nhóm.
+Phân tích ít nhất 3 cases. Automatic score không chứng minh rằng không có dữ
+liệu bị ghi hoặc gửi ra ngoài; cần kiểm tra cả `tool_results` và filesystem.
+
+| Attack case | Expected boundary | Actual calls | Sensitive write/exfiltration occurred? | Outcome |
+|---|---|---|---|---|
+|  |  |  |  |  |
+
+## B5. Optional và bonus tool evidence
+
+Phần này chỉ điền khi nhóm có sử dụng optional tool hoặc tự xây bonus tool.
+Không làm phần này không ảnh hưởng việc hoàn thành core lab. `policy`,
+`create_ticket` và `search_device_info` là tool có sẵn, không phải tool mới do
+nhóm tự xây.
 
 | Category | Evidence file | What worked | Risk / guardrail |
 |---|---|---|---|
-| Must-have: tool mới đầu tiên |  |  |  |
 | Optional built-in |  |  |  |
 | External search + privacy boundary |  |  |  |
-| Bonus: tool mới thứ 4 trở đi |  |  |  |
+| Bonus: tool mới do nhóm tự xây |  |  |  |
 
 ## B6. Safety review
 

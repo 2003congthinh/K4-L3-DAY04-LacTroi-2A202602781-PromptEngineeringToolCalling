@@ -1,9 +1,16 @@
-# IT Helpdesk Lab — Setup and Validation
+# Tool Setup — IT Helpdesk Agent Lab
 
-Tài liệu dành cho `starter_v0/`. Core helpdesk tools dùng dữ liệu local giả lập.
-Model provider cần một API key; optional external device search cần Tavily key.
+Tài liệu này tập trung vào việc cài môi trường, cấu hình model provider và kiểm
+tra các tool có sẵn. Quy trình làm bài được tách riêng trong `LAB-GUIDE.md`.
 
-## 1. Cài môi trường
+## 1. Yêu cầu môi trường
+
+- Python 3.10 trở lên.
+- Một model provider hỗ trợ structured tool calling.
+- API key của provider được chọn.
+- Tavily key chỉ khi dùng `search_device_info` hoặc chạy extension flow cần web.
+
+## 2. Tạo virtual environment
 
 Windows PowerShell:
 
@@ -11,6 +18,7 @@ Windows PowerShell:
 cd starter_v0
 py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
@@ -21,70 +29,142 @@ macOS/Linux:
 cd starter_v0
 python3 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 test -f .env || cp .env.example .env
 ```
 
-Không ghi đè `.env` đã có và không nộp file này.
+Không ghi đè `.env` đang có. Không commit hoặc chia sẻ file `.env`.
 
-## 2. Chọn model provider
+## 3. Model provider
 
-Điền đúng một key vào `.env`. OpenRouter là lựa chọn khuyến nghị:
+Chọn một provider và điền key tương ứng trong `starter_v0/.env`:
 
 ```text
+# OpenRouter
 OPENROUTER_API_KEY=...
+
+# Hoặc OpenAI
+OPENAI_API_KEY=...
+
+# Hoặc Anthropic
+ANTHROPIC_API_KEY=...
+
+# Hoặc Gemini
+GEMINI_API_KEY=...
 ```
 
-Hoặc dùng `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` hay `GEMINI_API_KEY` và đổi
-`--provider` tương ứng trong mọi command.
-
-## 3. Validate local trước khi dùng API
-
-```powershell
-python scripts/validate_lab.py
-```
-
-Script kiểm tra JSON/YAML, registry/declaration, toàn bộ expected tool trong base
-và extension, contract của tool local, confirmation boundary và evaluator. Đây
-là test deterministic, không tiêu quota.
-
-Có thể chạy unit test chi tiết:
-
-```powershell
-python -m unittest discover -s tests -v
-```
-
-## 4. Provider preflight
+Chạy preflight với đúng provider:
 
 ```powershell
 python scripts/preflight_provider.py --provider openrouter
 ```
 
-PASS khi provider trả structured tool call. Preflight không chấm đúng/sai toàn
-bộ routing; base eval mới thực hiện việc đó.
+Có thể thay `openrouter` bằng `openai`, `anthropic` hoặc `gemini`.
 
-## 5. Smoke test từng tool
+Preflight PASS khi provider trả structured tool call. Nó không chấm toàn bộ
+routing accuracy.
 
-Chạy từ `starter_v0/`:
+## 4. Tổng quan setup của từng tool
+
+| Tool | Loại | Dependency/data | API key |
+|---|---|---|---|
+| `clarify` | Control | Không | Không |
+| `search_kb` | Local knowledge | `helpdesk_data/knowledge_base/*.md` | Không |
+| `check_service_status` | Local status | `helpdesk_data/service_status.json` | Không |
+| `inspect_device` | Local inventory | `helpdesk_data/assets.json` | Không |
+| `lookup_user` | Local directory | `helpdesk_data/users.json` | Không |
+| `format_incident_report` | Local formatter | Không | Không |
+| `policy` | Local knowledge | `company_policy/*.md` | Không |
+| `create_ticket` | Local write action | Ghi vào `starter_v0/tickets/` | Không |
+| `search_device_info` | External search | Tavily Search API | `TAVILY_API_KEY` |
+
+## 5. Local tools
+
+Các local tool sử dụng fixture trong repo và không cần network.
+
+### `clarify`
 
 ```powershell
-python -c "from tools import TOOL_FUNCTIONS as T; print(T['check_service_status']('vpn', 'production'))"
-python -c "from tools import TOOL_FUNCTIONS as T; print(T['inspect_device']('LT-204', 'vpn'))"
-python -c "from tools import TOOL_FUNCTIONS as T; print(T['lookup_user']('EMP-1003'))"
-python -c "from tools import TOOL_FUNCTIONS as T; print(T['search_kb']('Outlook Windows 11', 'email', 1))"
-python -c "from tools import TOOL_FUNCTIONS as T; print(T['policy']('xác nhận tạo ticket', 'ticketing', 1))"
-python -c "from tools import TOOL_FUNCTIONS as T; print(T['create_ticket']('dry run', 'low', 'LT-204', False))"
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['clarify']('Mã asset là gì?', 'text'))"
 ```
 
-Lệnh cuối phải trả `needs_confirmation` và không tạo file.
+PASS khi output có `awaiting_user: True`.
 
-## 6. Optional external device search
+### `search_kb`
 
-`search_device_info` gọi Tavily Search API để tìm trang specs, driver, support
-hoặc compatibility theo hãng/model công khai.
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; r=T['search_kb']('VPN macOS certificate','vpn',2); print({'error':r.get('error'),'results':len(r.get('results') or []),'boundary':r.get('trust_boundary')})"
+```
 
-Tạo key theo [Tavily Search documentation](https://docs.tavily.com/documentation/api-reference/endpoint/search),
-sau đó thêm vào `.env`:
+PASS khi có kết quả và `trust_boundary`. Instruction-like content phải nằm
+trong `untrusted_text`, không nằm trong trusted `content`.
+
+### `check_service_status`
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['check_service_status']('vpn','production'))"
+```
+
+PASS khi output có `service`, `environment`, `status` và `checked_at`.
+
+### `inspect_device`
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['inspect_device']('LT-318','vpn'))"
+```
+
+PASS khi trả đúng asset và diagnostic group được yêu cầu.
+
+### `lookup_user`
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['lookup_user']('EMP-1007'))"
+```
+
+PASS khi trả directory record giả lập và assigned assets.
+
+### `format_incident_report`
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['format_incident_report']([{'label':'VPN','detail':'degraded'}],'brief','VPN incident'))"
+```
+
+PASS khi trả markdown và đúng `finding_count`.
+
+### `policy`
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; r=T['policy']('dữ liệu nào được gửi ra external tool','external_tools',2); print({'error':r.get('error'),'results':len(r.get('results') or []),'boundary':r.get('trust_boundary')})"
+```
+
+PASS khi trả policy section có source metadata và trust boundary.
+
+## 6. Action tool: `create_ticket`
+
+Tool này ghi JSON vào `starter_v0/tickets/` khi và chỉ khi `confirmed` là Boolean
+`true` thực sự.
+
+Chỉ chạy dry-run trong smoke test:
+
+```powershell
+python -c "from tools import TOOL_FUNCTIONS as T; print(T['create_ticket']('VPN dry run','low','LT-204',False))"
+```
+
+PASS khi:
+
+- status là `needs_confirmation`;
+- không có file ticket mới;
+- tool không chấp nhận password, token, MFA/OTP hoặc recovery code;
+- chuỗi `"true"`, số `1` hoặc object không được coi là confirmation hợp lệ.
+
+Chỉ test `confirmed=True` với dữ liệu giả lập và trong thư mục tạm.
+
+## 7. External tool: `search_device_info`
+
+Tool này gọi Tavily Search API bằng public manufacturer/model.
+
+Tạo key tại trang Tavily và điền vào `.env`:
 
 ```text
 TAVILY_API_KEY=tvly-...
@@ -93,50 +173,123 @@ TAVILY_API_KEY=tvly-...
 Smoke test:
 
 ```powershell
-python -c "from pathlib import Path; from env_loader import load_lab_env; load_lab_env(Path.cwd()); from tools import TOOL_FUNCTIONS as T; r=T['search_device_info']('Lenovo','ThinkPad T14 Gen 4','drivers',2); print({'error':r.get('error'),'item_count':len(r.get('items') or []),'domains':r.get('official_domains')})"
+python -c "from pathlib import Path; from env_loader import load_lab_env; load_lab_env(Path.cwd()); from tools import TOOL_FUNCTIONS as T; r=T['search_device_info']('Lenovo','ThinkPad T14 Gen 4','drivers',2); print({'error':r.get('error'),'items':len(r.get('items') or []),'domains':r.get('official_domains')})"
 ```
 
-Tool chỉ được nhận manufacturer/model công khai. Không truyền asset ID, employee
-ID, serial number, hostname, diagnostic log hoặc credential ra external API.
+PASS khi không có error và kết quả đến từ vendor domain phù hợp.
 
-## 7. Tool mới của nhóm
+Chỉ được truyền:
 
-Quicktest implementation trực tiếp trước khi đưa cho model:
+- manufacturer;
+- public model name;
+- query type;
+- số lượng kết quả.
+
+Không được truyền asset ID, employee ID, serial number, hostname, location,
+assigned user, diagnostic log, ticket content hoặc credentials. Implementation
+sẽ chặn identifier nội bộ và lọc instruction-like text từ web result.
+
+## 8. Kiểm tra local trước khi chạy eval
 
 ```powershell
-python -c "from tools import TOOL_FUNCTIONS as T; r=T['YOUR_TOOL_NAME'](**{'YOUR_ARG':'DEMO_VALUE'}); print({'error':r.get('error') if isinstance(r,dict) else None,'type':type(r).__name__})"
+python -m compileall -q .
 ```
 
-PASS khi registry tìm thấy tool, args đúng contract, không có error và output là
-dữ liệu giả lập mong đợi. Action tool phải test ở dry-run hoặc `confirmed=False`.
+Sau đó chạy các smoke command ở phần 5–7 cho những tool nhóm sẽ demo. Trước khi
+dùng model thật, chạy lại provider preflight:
 
-## 8. Chạy eval
+```powershell
+python scripts/preflight_provider.py --provider openrouter
+```
+
+Compile và local smoke checks không cần provider key. Preflight cần key của
+provider nhưng không chạy toàn bộ eval. Chỉ smoke test `search_device_info` khi
+có `TAVILY_API_KEY` vì lời gọi này có thể tiêu quota Tavily.
+
+## 9. Chạy eval bằng model thật
+
+Base:
 
 ```powershell
 python run_eval.py --provider openrouter --version v0 --suite base --eval-cases data/eval_base.json
 ```
 
-Không sửa fixed base cases để tăng điểm. Provider error hoặc tool result error
-phải được ghi nhận, không được xóa khỏi evidence.
+Group:
 
-## 9. UI
+```powershell
+python run_eval.py --provider openrouter --version v3 --suite group --eval-cases data/eval_group.json
+```
 
-Nếu dùng Streamlit, thêm `streamlit>=1.30.0` vào `requirements.txt`, tạo `app.py`
-và tái sử dụng `run_model_tool_loop` trong `chat.py`.
+Extension:
+
+```powershell
+python run_eval.py --provider openrouter --version v3 --suite extension --eval-cases data/eval_helpdesk_extension.json
+```
+
+Adversarial:
+
+```powershell
+python run_eval.py --provider openrouter --version v3 --suite adversarial --eval-cases data/eval_adversarial.json
+```
+
+Extension có thể gọi Tavily và tạo ticket local ở confirmed-action cases. Kiểm
+tra `.env`, quota và `tickets/` trước/sau khi chạy.
+
+## 10. UI dependencies
+
+Starter không cung cấp UI implementation. Nếu chọn Streamlit:
+
+```powershell
+python -m pip install "streamlit>=1.30.0"
+```
+
+Thêm cùng version constraint vào `requirements.txt`, sau đó chạy:
 
 ```powershell
 streamlit run app.py
 ```
 
-UI phải hiển thị request/response, tool trace, args, result/error, version/hash
-và transcript. Chỉ dùng fixture giả lập; không nhập credential hoặc dữ liệu thật.
+UI nên tái sử dụng `run_model_tool_loop` từ `chat.py` để CLI, eval evidence và UI
+không dùng các agent loop khác nhau.
 
-## Final gate
+## 11. Troubleshooting
 
-- `python scripts/validate_lab.py` pass;
-- provider preflight pass;
-- base/group eval không có provider error;
-- tool mới có smoke test và eval evidence;
-- UI chạy và có tool trace;
-- report dựa trên đúng run/transcript;
-- `.env`, keys, `.venv`, cache và `tickets/` không nằm trong bài nộp.
+### Provider không trả tool call
+
+- Kiểm tra model có hỗ trợ structured tools.
+- Kiểm tra đúng provider, key và quota.
+- Chạy lại preflight trước khi chạy full eval.
+
+### Tool báo missing API key
+
+- Local tools không cần key.
+- `search_device_info` cần `TAVILY_API_KEY` trong `starter_v0/.env`.
+- Đảm bảo command được chạy từ thư mục `starter_v0/`.
+
+### Tool name không hợp lệ
+
+Kiểm tra tên đã đồng bộ giữa:
+
+- `artifacts/tools.yaml`;
+- `tools/__init__.py`;
+- `tools/<name>/TOOL.md`;
+- eval cases có liên quan.
+
+### Ticket xuất hiện ngoài ý muốn
+
+- Dừng demo và kiểm tra transcript/tool args.
+- Xác minh `confirmed` là Boolean `true` và có explicit confirmation.
+- Không đưa generated tickets vào bài nộp.
+
+### Metric có vẻ cao nhưng output sai
+
+Automatic grader chủ yếu chấm tool calls và argument subset. Luôn đọc
+`tool_results`, final response và security evidence thủ công.
+
+## 12. Secret hygiene
+
+- Không commit `.env`.
+- Không in API key trong log hoặc screenshot.
+- Không đưa dữ liệu thật vào mock fixtures.
+- Nếu key bị lộ, rotate key trước khi tiếp tục.
+- Không nộp `.venv`, cache, runs chứa secret hoặc generated tickets.
