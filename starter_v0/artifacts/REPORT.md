@@ -146,6 +146,17 @@ Sao chép mẫu dưới đây cho từng thành viên:
 - **Điều tôi học được từ phần việc này:**
 - **Nếu làm lại, tôi sẽ cải thiện điều gì:**
 
+### Nguyễn Công Thịnh — 2A202602781
+
+- **Vai trò/phần việc được nhận:** Thực hiện phiên bản v3: thiết kế bộ đánh giá nhóm và chạy đánh giá trên các tình huống nhóm, extension và adversarial.
+- **Những gì tôi đã thay đổi trong repo chung:** Tôi đã hoàn thiện `data/eval_group.json` với đúng 10 case tự viết (5 single-turn, 5 multi-turn). Các case tập trung vào yêu cầu thiếu asset ID, hủy tạo ticket, tra cứu driver công khai, ranh giới policy/xác nhận, so sánh nhiều environment, sửa thông tin ở lượt sau và xác nhận đã cũ. Sau đó tôi chạy v3 để kiểm tra prompt/tool hiện có trên các suite group, extension và adversarial.
+- **File hoặc artifact liên quan:** `starter_v0/data/eval_group.json`; `starter_v0/runs/v3_B_group_openrouter_20260915T210509296547.json`; `starter_v0/runs/v3_B_extension_openrouter_20260915T210558684893.json`; `starter_v0/runs/v3_B_adversarial_openrouter_20260915T210632039699.json`.
+- **Commit hash hoặc pull request:** Chưa có — phần thay đổi và self-reflection này cần được tôi commit bằng Git identity `2003congthinh` trước khi nộp bài.
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** Tôi chia bộ eval thành các hành vi có thể quan sát qua tool trace, thay vì chỉ kiểm tra câu trả lời cuối. Đặc biệt, các case tạo ticket yêu cầu `clarify` trước khi write action và các case multi-turn kiểm tra giá trị mới nhất, vì đây là các điểm dễ xảy ra lỗi an toàn nhưng automatic score của case đơn lẻ khó bao quát.
+- **Khó khăn tôi gặp và cách tôi xử lý:** Khi chạy v3, model vẫn có thể gọi tool dù người dùng đã hủy thao tác hoặc tái sử dụng confirmation cũ. Tôi giữ các case này trong eval thay vì chỉnh kỳ vọng cho pass, đồng thời ghi nhận kết quả thực tế: group đạt 8/10; extension và adversarial đều đạt 5/10, không có provider error. Nhờ vậy các lỗi boundary còn lại có evidence để tiếp tục sửa prompt/tool.
+- **Điều tôi học được từ phần việc này:** Eval tốt cần tách rõ routing, argument và boundary; với agent có tool write, cần kiểm tra toàn bộ chuỗi hội thoại, không chỉ kiểm tra tool cuối cùng. Run artifact cũng cho thấy prompt rule chưa bảo đảm model luôn tuân thủ confirmation boundary, nên phải review cả actual calls và tool results.
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** Tôi sẽ bổ sung thêm case đối kháng cho cancellation và stale confirmation, sau đó lặp lại việc chỉnh prompt/tool schema và chạy lại cùng ba suite để xác minh không còn write action ngoài ý muốn.
+
 Mỗi thành viên phải tự commit phần self-reflection của mình bằng Git identity
 tương ứng. Reflection phải dẫn đến contribution artifact/commit đã nêu ở trên,
 không dùng chính phần reflection làm bằng chứng duy nhất cho đóng góp kỹ thuật.
