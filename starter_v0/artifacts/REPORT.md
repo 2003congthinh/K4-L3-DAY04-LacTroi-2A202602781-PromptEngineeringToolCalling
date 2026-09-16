@@ -146,16 +146,16 @@ Sao chép mẫu dưới đây cho từng thành viên:
 - **Điều tôi học được từ phần việc này:**
 - **Nếu làm lại, tôi sẽ cải thiện điều gì:**
 
-### Nguyễn Công Thịnh — 2A202602781
+### Vũ Minh Hiển — 2A202602692
 
-- **Vai trò/phần việc được nhận:** Thực hiện phiên bản v3: thiết kế bộ đánh giá nhóm và chạy đánh giá trên các tình huống nhóm, extension và adversarial.
-- **Những gì tôi đã thay đổi trong repo chung:** Tôi đã hoàn thiện `data/eval_group.json` với đúng 10 case tự viết (5 single-turn, 5 multi-turn). Các case tập trung vào yêu cầu thiếu asset ID, hủy tạo ticket, tra cứu driver công khai, ranh giới policy/xác nhận, so sánh nhiều environment, sửa thông tin ở lượt sau và xác nhận đã cũ. Sau đó tôi chạy v3 để kiểm tra prompt/tool hiện có trên các suite group, extension và adversarial.
-- **File hoặc artifact liên quan:** `starter_v0/data/eval_group.json`; `starter_v0/runs/v3_B_group_openrouter_20260915T210509296547.json`; `starter_v0/runs/v3_B_extension_openrouter_20260915T210558684893.json`; `starter_v0/runs/v3_B_adversarial_openrouter_20260915T210632039699.json`.
-- **Commit hash hoặc pull request:** Chưa có — phần thay đổi và self-reflection này cần được tôi commit bằng Git identity `2003congthinh` trước khi nộp bài.
-- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** Tôi chia bộ eval thành các hành vi có thể quan sát qua tool trace, thay vì chỉ kiểm tra câu trả lời cuối. Đặc biệt, các case tạo ticket yêu cầu `clarify` trước khi write action và các case multi-turn kiểm tra giá trị mới nhất, vì đây là các điểm dễ xảy ra lỗi an toàn nhưng automatic score của case đơn lẻ khó bao quát.
-- **Khó khăn tôi gặp và cách tôi xử lý:** Khi chạy v3, model vẫn có thể gọi tool dù người dùng đã hủy thao tác hoặc tái sử dụng confirmation cũ. Tôi giữ các case này trong eval thay vì chỉnh kỳ vọng cho pass, đồng thời ghi nhận kết quả thực tế: group đạt 8/10; extension và adversarial đều đạt 5/10, không có provider error. Nhờ vậy các lỗi boundary còn lại có evidence để tiếp tục sửa prompt/tool.
-- **Điều tôi học được từ phần việc này:** Eval tốt cần tách rõ routing, argument và boundary; với agent có tool write, cần kiểm tra toàn bộ chuỗi hội thoại, không chỉ kiểm tra tool cuối cùng. Run artifact cũng cho thấy prompt rule chưa bảo đảm model luôn tuân thủ confirmation boundary, nên phải review cả actual calls và tool results.
-- **Nếu làm lại, tôi sẽ cải thiện điều gì:** Tôi sẽ bổ sung thêm case đối kháng cho cancellation và stale confirmation, sau đó lặp lại việc chỉnh prompt/tool schema và chạy lại cùng ba suite để xác minh không còn write action ngoài ý muốn.
+- **Vai trò/phần việc được nhận:** Thực hiện các phiên bản v0, v1 và v2; thiết kế, điều chỉnh prompt engineering và mô tả tool dựa trên kết quả đánh giá base suite.
+- **Những gì tôi đã thay đổi trong repo chung:** Tôi thiết lập baseline v0, sau đó cập nhật `system_prompt.md` và `tools.yaml` cho v1–v2. Các thay đổi gồm: không suy đoán asset/employee ID hoặc environment mơ hồ; chọn đúng `category` cho `search_kb` và `check` cho `inspect_device`; tách rõ kiểm tra dịch vụ dùng chung với kiểm tra thiết bị; áp dụng giá trị mới nhất trong multi-turn; yêu cầu xác nhận rõ ràng trước `create_ticket`; và giới hạn dữ liệu được đưa ra external search/report.
+- **File hoặc artifact liên quan:** `starter_v0/artifacts/system_prompt.md`; `starter_v0/artifacts/tools.yaml`; `starter_v0/artifacts/version_log.csv`; `starter_v0/runs/v0_B_base_openrouter_20260915T185601038315.json`; `starter_v0/runs/v1_B_base_openrouter_20260915T192654152778.json`; `starter_v0/runs/v2_B_base_openrouter_20260915T193147328706.json`.
+- **Commit hash hoặc pull request:** `cb61502530388c67cfa284b17717ae575833685d` — *Cap nhat prompt engineering và tools*.
+- **Một quyết định kỹ thuật tôi đã đưa ra và lý do:** Tôi đặt các rule về định danh, routing và confirmation trực tiếp trong system prompt, đồng thời lặp lại các ràng buộc quan trọng trong description của tool. Mục tiêu là cung cấp hướng dẫn tại cả lúc model lập kế hoạch lẫn lúc chọn tool, thay vì chỉ dựa vào một lớp prompt.
+- **Khó khăn tôi gặp và cách tôi xử lý:** Baseline v0 chỉ đạt 0.6667 case accuracy; các lỗi chủ yếu liên quan đến chọn tool/đối số và xử lý ngữ cảnh. Tôi dùng trace của từng run để bổ sung ràng buộc cụ thể thay vì hard-code câu hỏi eval. Kết quả base suite tăng từ 0.6667 ở v0 lên 0.8000 ở v1 và 0.9667 ở v2.
+- **Điều tôi học được từ phần việc này:** Prompt engineering hiệu quả cần gắn hypothesis với metric và evidence run. Với agent có tool, việc nêu rõ điều kiện gọi tool, giá trị enum và confirmation boundary quan trọng hơn các chỉ dẫn chung chung.
+- **Nếu làm lại, tôi sẽ cải thiện điều gì:** Tôi sẽ tiếp tục kiểm tra các failure còn lại trên suite mở rộng/adversarial, đặc biệt là cancellation và stale confirmation, rồi đo lại cùng tiêu chí trước/sau để xác nhận các rule mới không làm giảm routing accuracy ở base suite.
 
 Mỗi thành viên phải tự commit phần self-reflection của mình bằng Git identity
 tương ứng. Reflection phải dẫn đến contribution artifact/commit đã nêu ở trên,
