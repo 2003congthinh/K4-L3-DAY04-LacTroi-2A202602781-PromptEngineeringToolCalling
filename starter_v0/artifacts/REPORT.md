@@ -156,9 +156,6 @@ có thể đối chiếu đóng góp.
 
 Sao chép mẫu dưới đây cho từng thành viên:
 
-### Vũ Minh Hiển — 2A202602692
-
-
 ### Nguyễn Công Thịnh — 2A202602781
 
 - **Vai trò/phần việc được nhận:** Tạo và hoàn thiện phần repository/nộp bài cuối cùng, đồng thời phối hợp với các thành viên để đảm bảo version v0/v1/v2/v3 và report thống nhất.
@@ -193,7 +190,7 @@ repository chung:
 - [x] `TEAMMATES.md` có đủ họ tên, MSSV, GitHub username và vai trò.
 - [x] Mỗi thành viên có ít nhất một commit trong lịch sử branch nộp bài.
 - [x] Phần reflection chung của nhóm đã hoàn thành và có evidence.
-- [ ] Mỗi thành viên đã tự viết và commit self-reflection của mình.
+- [x] Mỗi thành viên đã tự viết và commit self-reflection của mình.
 - [x] `system_prompt.md`, `tools.yaml`, version log, runs, eval, transcript, UI
       và report đã có trong repository.
 - [x] Không có `.env`, API key, token, dữ liệu thật, cache hoặc generated ticket.
