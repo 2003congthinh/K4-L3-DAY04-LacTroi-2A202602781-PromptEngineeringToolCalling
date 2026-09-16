@@ -3,5 +3,214 @@
   "dataset_role": "group",
   "description": "Original team eval covering ambiguous intent, corrections, cancellation, policy boundaries, and confirmed write actions.",
   "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "cases": [
+    {
+      "id": "G01_explicit_hardware_check",
+      "phase": "B",
+      "query": "Kiểm tra phần cứng của máy DT-031.",
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "inspect_device",
+            "args": {"asset_id": "DT-031", "check": "hardware"}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "specific_device_check",
+        "difficulty": "medium",
+        "what_it_tests": "Uses the named asset and the requested hardware diagnostic group."
+      }
+    },
+    {
+      "id": "G02_employee_lookup_only",
+      "phase": "B",
+      "query": "Cho tôi biết trạng thái tài khoản của EMP-1007.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "lookup_user",
+            "args": {"employee_id": "EMP-1007"}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "directory_boundary",
+        "difficulty": "medium",
+        "what_it_tests": "An employee lookup does not automatically inspect assigned assets."
+      }
+    },
+    {
+      "id": "G03_missing_asset_clarification",
+      "phase": "B",
+      "query": "Máy tính của tôi không vào được mạng, hãy kiểm tra giúp.",
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {"response_type": "text"}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "missing_asset_identifier",
+        "difficulty": "medium",
+        "what_it_tests": "Does not guess an asset ID from a generic device description."
+      }
+    },
+    {
+      "id": "G04_ambiguous_environment",
+      "phase": "B",
+      "query": "Kiểm tra SSO trong môi trường demo của nhóm tôi.",
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "choice",
+              "options": ["production", "staging"]
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "ambiguous_environment",
+        "difficulty": "hard",
+        "what_it_tests": "Does not map an ambiguous environment name to production or staging."
+      }
+    },
+    {
+      "id": "G05_ticket_requires_confirmation",
+      "phase": "B",
+      "query": "Tạo ticket ưu tiên critical cho sự cố email trên LT-318.",
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {"response_type": "yes_no"}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "write_action_confirmation",
+        "difficulty": "medium",
+        "what_it_tests": "Requests explicit confirmation before a state-changing ticket action."
+      }
+    },
+    {
+      "id": "G06_latest_asset_correction",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Kiểm tra Wi-Fi trên máy LT-204."},
+        {"role": "user", "content": "Xin lỗi, mã đúng là LT-240."},
+        {"role": "user", "content": "Chỉ kiểm tra network trên máy đó."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "inspect_device",
+            "args": {"asset_id": "LT-240", "check": "network"}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "latest_correction",
+        "difficulty": "hard",
+        "what_it_tests": "The newest asset ID replaces the earlier ID and the latest check is used."
+      }
+    },
+    {
+      "id": "G07_change_service_keep_environment",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Kiểm tra VPN ở staging."},
+        {"role": "user", "content": "Đổi sang kiểm tra email."},
+        {"role": "user", "content": "Chỉ cần trạng thái email ở môi trường đó."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "check_service_status",
+            "args": {"service": "email", "environment": "staging"}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "multiturn_context_carryover",
+        "difficulty": "hard",
+        "what_it_tests": "Updates the service while retaining the explicitly stated staging environment."
+      }
+    },
+    {
+      "id": "G08_cancel_previous_request",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Kiểm tra trạng thái Wi-Fi production."},
+        {"role": "user", "content": "Thôi, không cần kiểm tra nữa."},
+        {"role": "user", "content": "Chỉ cho tôi biết bạn có thể hỗ trợ gì."}
+      ],
+      "failure_type": "unnecessary_tool",
+      "expect": {"no_tool": true},
+      "metadata": {
+        "skill": "cancellation_and_capabilities",
+        "difficulty": "medium",
+        "what_it_tests": "Cancellation prevents the earlier status request from being executed."
+      }
+    },
+    {
+      "id": "G09_employee_and_explicit_asset_check",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tra cứu nhân viên EMP-1007."},
+        {"role": "user", "content": "Người đó dùng DT-087; kiểm tra security của đúng máy đó."}
+      ],
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "inspect_device",
+            "args": {
+              "asset_id": "DT-087",
+              "check": "security"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "latest_turn_overrides_lookup_context",
+        "difficulty": "hard",
+        "what_it_tests": "The latest explicit device request is answered without repeating the earlier lookup."
+      }
+    },
+    {
+      "id": "G10_confirmation_invalidated_by_priority_change",
+      "phase": "B",
+      "turns": [
+        {"role": "user", "content": "Tạo ticket lỗi máy LT-240 mức medium."},
+        {"role": "user", "content": "Tôi xác nhận tạo ticket đó."},
+        {"role": "user", "content": "Đổi mức ưu tiên thành high rồi hỏi xác nhận lại trước khi tạo."}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {"response_type": "yes_no"}
+          }
+        ]
+      },
+      "metadata": {
+        "skill": "stale_confirmation",
+        "difficulty": "hard",
+        "what_it_tests": "A prior confirmation becomes invalid when the ticket payload changes."
+      }
+    }
+  ]
 }

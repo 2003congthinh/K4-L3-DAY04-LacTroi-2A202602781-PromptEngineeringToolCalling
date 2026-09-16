@@ -46,7 +46,7 @@ tools:
       required: [asset_id]
 
   - name: lookup_user
-    description: "Tra cứu người dùng trong danh bạ hỗ trợ."
+    description: "Tra cứu một employee ID trong danh bạ hỗ trợ và trả về directory record cùng assigned assets. Đây chỉ là tra cứu: không gọi inspect_device chỉ vì kết quả có asset ID; chỉ kiểm tra asset khi người dùng yêu cầu rõ ràng. Không dùng department, display name hoặc assigned asset để thay thế employee_id."
     parameters:
       type: object
       properties:
